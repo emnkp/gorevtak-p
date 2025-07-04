@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Akıllı Görev Takip</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f6fc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .filters {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0 15px;
+    }
+
+    .filters button {
+      flex: 1;
+      margin: 0 3px;
+      background-color: #e9ecef;
+      color: #333;
+    }
+
+    .filters button.active {
+      background-color: #007bff;
+      color: white;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    li.tamamlandi {
+      text-decoration: line-through;
+      color: gray;
+      background: #d4edda;
+    }
+
+    .butonlar {
+      display: flex;
+      gap: 6px;
+    }
+
+    .sil-btn {
+      background-color: #dc3545;
+      padding: 6px 10px;
+      border-radius: 5px;
+      color: white;
+      font-size: 12px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .tamamla-btn {
+      background-color: #28a745;
+      padding: 6px 10px;
+      border-radius: 5px;
+      color: white;
+      font-size: 12px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .clear-btn {
+      background-color: #6c757d;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 500px) {
+      .input-group {
+        flex-direction: column;
+      }
+
+      .filters {
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .filters button {
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Görev Takip</h1>
+
+    <div class="input-group">
+      <input type="text" id="gorevInput" placeholder="Yeni görev girin..." />
+      <button onclick="gorevEkle()">Ekle</button>
+    </div>
+
+    <div class="filters">
+      <button onclick="filtrele('tum')" id="filtre-tum" class="active">Tümü</button>
+      <button onclick="filtrele('aktif')" id="filtre-aktif">Aktif</button>
+      <button onclick="filtrele('tamamlanan')" id="filtre-tamamlanan">Tamamlanan</button>
+    </div>
+
+    <ul id="gorevListesi"></ul>
+
+    <button class="clear-btn" onclick="tumunuSil()">Tümünü Sil</button>
+  </div>
+
+  <script>
+    let filtre = "tum";
+
+    window.onload = function () {
+      gorevleriYukle();
+    };
+
+    function gorevEkle() {
+      const input = document.getElementById("gorevInput");
+      const metin = input.value.trim();
+      if (metin === "") return;
+
+      const li = document.createElement("li");
+      li.textContent = metin;
+
+      const butonlar = document.createElement("div");
+      butonlar.className = "butonlar";
+
+      const tamamlaBtn = document.createElement("button");
+      tamamlaBtn.textContent = "Tamamla";
+      tamamlaBtn.className = "tamamla-btn";
+      tamamlaBtn.onclick = function (e) {
+        e.stopPropagation();
+        li.classList.toggle("tamamlandi");
+        gorevleriKaydet();
+        filtrele(filtre);
+      };
+
+      const silBtn = document.createElement("button");
+      silBtn.textContent = "Sil";
+      silBtn.className = "sil-btn";
+      silBtn.onclick = function (e) {
+        e.stopPropagation();
+        li.remove();
+        gorevleriKaydet();
+      };
+
+      butonlar.appendChild(tamamlaBtn);
+      butonlar.appendChild(silBtn);
+
+      li.innerHTML = metin;
+      li.appendChild(butonlar);
+
+      document.getElementById("gorevListesi").appendChild(li);
+      input.value = "";
+      gorevleriKaydet();
+      filtrele(filtre);
+    }
+
+    function gorevleriKaydet() {
+      const liste = document.getElementById("gorevListesi").innerHTML;
+      localStorage.setItem("gorevler", liste);
+    }
+
+    function gorevleriYukle() {
+      const veri = localStorage.getItem("gorevler");
+      if (veri) {
+        document.getElementById("gorevListesi").innerHTML = veri;
+
+        document.querySelectorAll("#gorevListesi li").forEach((li) => {
+          const tamamlaBtn = li.querySelector(".tamamla-btn");
+          const silBtn = li.querySelector(".sil-btn");
+
+          if (tamamlaBtn) {
+            tamamlaBtn.onclick = function (e) {
+              e.stopPropagation();
+              li.classList.toggle("tamamlandi");
+              gorevleriKaydet();
+              filtrele(filtre);
+            };
+          }
+
+          if (silBtn) {
+            silBtn.onclick = function (e) {
+              e.stopPropagation();
+              li.remove();
+              gorevleriKaydet();
+            };
+          }
+        });
+      }
+    }
+
+    function filtrele(tip) {
+      filtre = tip;
+
+      document.querySelectorAll(".filters button").forEach(btn => btn.classList.remove("active"));
+      document.getElementById("filtre-" + tip).classList.add("active");
+
+      const tumGorevler = document.querySelectorAll("#gorevListesi li");
+      tumGorevler.forEach(li => {
+        if (tip === "tum") {
+          li.style.display = "flex";
+        } else if (tip === "aktif") {
+          li.style.display = li.classList.contains("tamamlandi") ? "none" : "flex";
+        } else if (tip === "tamamlanan") {
+          li.style.display = li.classList.contains("tamamlandi") ? "flex" : "none";
+        }
+      });
+    }
+
+    function tumunuSil() {
+      if (confirm("Tüm görevleri silmek istediğine emin misin?")) {
+        document.getElementById("gorevListesi").innerHTML = "";
+        gorevleriKaydet();
+      }
+    }
+  </script>
+</body>
+</html>
